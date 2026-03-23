@@ -59,5 +59,5 @@ app.use(errorHandler);
 connectDB();
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
-    console.log(`🌍 Accepting requests from: ${CLIENT_URL}`);
+    console.log(`🌍 Accepting requests from: ${CLIENT_URL}`); // client_url
 });
