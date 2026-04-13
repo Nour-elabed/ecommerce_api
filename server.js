@@ -15,33 +15,22 @@ import errorHandler from "./middleware/errorHandler.js";
 dotenv.config();
 
 const PORT = process.env.PORT || 5000;
+const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173";
 
 const app = express();
 
-// ─── Allowed Origins (FIXED CORS) ───────────────────────────────
-const allowedOrigins = [
-    "http://localhost:5173",
-    "http://localhost:5174",
-    "https://watchhaven.vercel.app"
-];
-
-// ─── Security Middleware ─────────────────────────────────────────
-app.use(helmet());
+// ─── Security Middleware ──────────────────────────────────────────
+app.use(helmet()); // Sets secure HTTP response headers
 
 app.use(
     cors({
-        origin: function (origin, callback) {
-            if (!origin || allowedOrigins.includes(origin)) {
-                callback(null, true);
-            } else {
-                callback(new Error("Not allowed by CORS"));
-            }
-        },
+        origin: CLIENT_URL,
         credentials: true,
     })
 );
 
-// ─── Rate Limiting ───────────────────────────────────────────────
+// ─── Rate Limiting ────────────────────────────────────────────────
+// Max 100 requests per 15 minutes per IP
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 100,
@@ -49,7 +38,8 @@ const limiter = rateLimit({
 });
 app.use("/api", limiter);
 
-// ─── Logging ─────────────────────────────────────────────────────
+// ─── Request Logging ──────────────────────────────────────────────
+// Logs: METHOD URL STATUS RESPONSE_TIME - Content-Length
 app.use(morgan("dev"));
 
 // ─── Body Parsing ─────────────────────────────────────────────────
@@ -62,12 +52,12 @@ app.use("/api/cart", cartRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/orders", orderRoutes);
 
-// ─── Error Handler ────────────────────────────────────────────────
+// ─── Global Error Handler (must be last!) ─────────────────────────
 app.use(errorHandler);
 
-// ─── DB + Server ──────────────────────────────────────────────────
+// ─── Database + Server ────────────────────────────────────────────
 connectDB();
-
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
+    console.log(`🌍 Accepting requests from: ${CLIENT_URL}`); // client_url
 });

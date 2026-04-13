@@ -14,7 +14,6 @@ import Product from "./models/Product.js";
 
 const products = [
     {
-        
         name: "Black Automatic Watch",
         description: "Premium automatic movement watch with sapphire crystal glass and genuine leather strap. Water resistant to 50m.",
         price: 169.99,
