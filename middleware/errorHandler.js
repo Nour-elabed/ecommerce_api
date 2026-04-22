@@ -4,9 +4,9 @@
  * Always returns a standardized { success, message } JSON response.
  */
 const errorHandler = (err, req, res, next) => {
-    const statusCode = res.statusCode && res.statusCode !== 200
+    const statusCode = err.statusCode || (res.statusCode && res.statusCode !== 200
         ? res.statusCode
-        : 500;
+        : 500);
 
     console.error(`[ERROR] ${req.method} ${req.originalUrl} →`, err.message);
 

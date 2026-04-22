@@ -21,6 +21,7 @@ export const createOrder = async (req, res, next) => {
             shippingAddress,
             paymentMethod,
             totalPrice,
+            status: "pending",
             isPaid,
             paidAt: isPaid ? new Date() : undefined,
         });
@@ -81,6 +82,7 @@ export const updateOrderToDelivered = async (req, res, next) => {
             throw new Error("Order not found");
         }
 
+        order.status = "delivered";
         order.isDelivered = true;
         order.deliveredAt = Date.now();
         const updatedOrder = await order.save();
