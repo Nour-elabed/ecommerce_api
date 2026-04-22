@@ -35,7 +35,7 @@ const userSchema = mongoose.Schema(
 );
 
 userSchema.virtual("isAdmin").get(function getIsAdmin() {
-    return this.role === ROLES.ADMIN;
+    return this.role === ROLES.ADMIN || this.role === ROLES.SUPER_ADMIN;
 });
 
 const User = mongoose.model("User", userSchema);

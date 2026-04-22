@@ -12,7 +12,7 @@ export const adminCreateOrUpdateProductSchema = Joi.object({
 
 export const adminUpdateUserRoleSchema = Joi.object({
     role: Joi.string()
-        .valid(...Object.values(ROLES))
+        .valid(ROLES.USER, ROLES.ADMIN)
         .required(),
 });
 

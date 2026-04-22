@@ -20,6 +20,9 @@ const registerSchema = Joi.object({
 const loginSchema = Joi.object({
     email: Joi.string().email().required(),
     password: Joi.string().required(),
+    role: Joi.string()
+        .valid(ROLES.USER, ROLES.ADMIN, ROLES.SUPER_ADMIN)
+        .required(),
 });
 
 const resolveRole = (userDoc) => {
@@ -28,6 +31,8 @@ const resolveRole = (userDoc) => {
     if (userDoc?.isAdmin === true) return ROLES.ADMIN;
     return ROLES.USER;
 };
+
+const isElevatedRole = (role) => role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN;
 
 // ─── Register ─────────────────────────────────────────────────────
 router.post("/register", validate(registerSchema), async (req, res, next) => {
@@ -69,7 +74,7 @@ router.post("/register", validate(registerSchema), async (req, res, next) => {
 
 // ─── Login ────────────────────────────────────────────────────────
 router.post("/login", validate(loginSchema), async (req, res, next) => {
-    const { email, password } = req.body;
+    const { email, password, role: requestedRole } = req.body;
     try {
         const user = await User.findOne({ email });
         if (!user) {
@@ -84,6 +89,10 @@ router.post("/login", validate(loginSchema), async (req, res, next) => {
 
         const token = generateToken(user._id);
         const role = resolveRole(user);
+        if (requestedRole !== role) {
+            res.status(403);
+            throw new Error(`This account does not have ${requestedRole} access`);
+        }
         res.status(200).json({
             success: true,
             data: {
@@ -91,7 +100,7 @@ router.post("/login", validate(loginSchema), async (req, res, next) => {
                 username: user.username,
                 email: user.email,
                 role,
-                isAdmin: role === ROLES.ADMIN,
+                isAdmin: isElevatedRole(role),
                 token,
             },
             message: "Logged in successfully",
@@ -110,7 +119,7 @@ router.get("/profile", protect, async (req, res, next) => {
             data: {
                 ...req.user.toObject(),
                 role,
-                isAdmin: role === ROLES.ADMIN,
+                isAdmin: isElevatedRole(role),
             },
             message: "Profile fetched",
         });
