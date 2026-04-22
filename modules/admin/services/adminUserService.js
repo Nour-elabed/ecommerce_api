@@ -1,6 +1,8 @@
 import { ROLES } from "../../../constants/roles.js";
 import { adminUserRepository } from "../repositories/adminUserRepository.js";
 
+const isElevatedRole = (role) => role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN;
+
 export const adminUserService = {
     async getUsers() {
         return adminUserRepository.findAll();
@@ -19,7 +21,7 @@ export const adminUserService = {
             throw error;
         }
 
-        if (targetUser.role === ROLES.ADMIN) {
+        if (isElevatedRole(targetUser.role)) {
             const error = new Error("Cannot delete another admin user");
             error.statusCode = 400;
             throw error;

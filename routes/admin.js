@@ -13,16 +13,16 @@ import {
 
 const router = express.Router();
 
-router.use(protect, authorize(ROLES.ADMIN));
+router.use(protect, authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN));
 
 router.get("/products", adminProductController.list);
 router.post("/products", validate(adminCreateOrUpdateProductSchema), adminProductController.create);
 router.put("/products/:id", validate(adminCreateOrUpdateProductSchema), adminProductController.update);
 router.delete("/products/:id", adminProductController.remove);
 
-router.get("/users", adminUserController.list);
-router.patch("/users/:id/role", validate(adminUpdateUserRoleSchema), adminUserController.updateRole);
-router.delete("/users/:id", adminUserController.remove);
+router.get("/users", authorize(ROLES.SUPER_ADMIN), adminUserController.list);
+router.patch("/users/:id/role", authorize(ROLES.SUPER_ADMIN), validate(adminUpdateUserRoleSchema), adminUserController.updateRole);
+router.delete("/users/:id", authorize(ROLES.SUPER_ADMIN), adminUserController.remove);
 
 router.get("/orders", adminOrderController.list);
 router.patch("/orders/:id/status", validate(adminUpdateOrderStatusSchema), adminOrderController.updateStatus);
