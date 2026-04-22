@@ -21,8 +21,7 @@ const loginSchema = Joi.object({
     email: Joi.string().email().required(),
     password: Joi.string().required(),
     role: Joi.string()
-        .valid(ROLES.USER, ROLES.ADMIN, ROLES.SUPER_ADMIN)
-        .required(),
+        .valid(ROLES.USER, ROLES.ADMIN, ROLES.SUPER_ADMIN),
 });
 
 const resolveRole = (userDoc) => {
@@ -74,7 +73,7 @@ router.post("/register", validate(registerSchema), async (req, res, next) => {
 
 // ─── Login ────────────────────────────────────────────────────────
 router.post("/login", validate(loginSchema), async (req, res, next) => {
-    const { email, password, role: requestedRole } = req.body;
+    const { email, password } = req.body;
     try {
         const user = await User.findOne({ email });
         if (!user) {
@@ -89,10 +88,7 @@ router.post("/login", validate(loginSchema), async (req, res, next) => {
 
         const token = generateToken(user._id);
         const role = resolveRole(user);
-        if (requestedRole !== role) {
-            res.status(403);
-            throw new Error(`This account does not have ${requestedRole} access`);
-        }
+
         res.status(200).json({
             success: true,
             data: {
