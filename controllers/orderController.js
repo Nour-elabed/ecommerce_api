@@ -1,4 +1,5 @@
 import Order from "../models/Order.js";
+import { ROLES } from "../constants/roles.js";
 
 // ─── POST /api/orders ─────────────────────────────────────────────
 // Creates a new order from the checkout form + cart items.
@@ -53,7 +54,8 @@ export const getOrderById = async (req, res, next) => {
             throw new Error("Order not found");
         }
         const isOwner = order.user._id.toString() === req.user._id.toString();
-        if (!isOwner && !req.user.isAdmin) {
+        const userRole = req.user.role || (req.user.isAdmin ? ROLES.ADMIN : ROLES.USER);
+        if (!isOwner && userRole !== ROLES.ADMIN) {
             res.status(403);
             throw new Error("Not authorized to view this order");
         }
