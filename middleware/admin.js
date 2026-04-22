@@ -6,7 +6,7 @@ import { ROLES } from "../constants/roles.js";
  */
 export const admin = (req, res, next) => {
     const userRole = req.user?.role || (req.user?.isAdmin ? ROLES.ADMIN : ROLES.USER);
-    if (req.user && userRole === ROLES.ADMIN) {
+    if (req.user && (userRole === ROLES.ADMIN || userRole === ROLES.SUPER_ADMIN)) {
         return next();
     }
     res.status(403).json({ success: false, message: "Access denied: Admins only" });
