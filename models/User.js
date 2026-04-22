@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
+import { DEFAULT_USER_ROLE, ROLES } from "../constants/roles.js";
 
 const userSchema = mongoose.Schema(
     {
@@ -20,14 +21,22 @@ const userSchema = mongoose.Schema(
             type: String,
             required: true,
         },
-        // Role-based access control
-        isAdmin: {
-            type: Boolean,
-            default: false,
+        role: {
+            type: String,
+            enum: Object.values(ROLES),
+            default: DEFAULT_USER_ROLE,
         },
     },
-    { timestamps: true }
+    {
+        timestamps: true,
+        toJSON: { virtuals: true },
+        toObject: { virtuals: true },
+    }
 );
+
+userSchema.virtual("isAdmin").get(function getIsAdmin() {
+    return this.role === ROLES.ADMIN;
+});
 
 const User = mongoose.model("User", userSchema);
 export default User;
