@@ -22,6 +22,13 @@ const loginSchema = Joi.object({
     password: Joi.string().required(),
 });
 
+const resolveRole = (userDoc) => {
+    if (userDoc?.role) return userDoc.role;
+    // Backward compatibility for accounts created before role migration.
+    if (userDoc?.isAdmin === true) return ROLES.ADMIN;
+    return ROLES.USER;
+};
+
 // ─── Register ─────────────────────────────────────────────────────
 router.post("/register", validate(registerSchema), async (req, res, next) => {
     const { username, email, password } = req.body;
@@ -42,14 +49,15 @@ router.post("/register", validate(registerSchema), async (req, res, next) => {
         const newUser = await User.create({ username, email, password: hashedPassword, role: ROLES.USER });
 
         const token = generateToken(newUser._id);
+        const role = resolveRole(newUser);
         res.status(201).json({
             success: true,
             data: {
                 id: newUser._id,
                 username: newUser.username,
                 email: newUser.email,
-                role: newUser.role,
-                isAdmin: newUser.role === ROLES.ADMIN,
+                role,
+                isAdmin: role === ROLES.ADMIN,
                 token,
             },
             message: "Account created successfully",
@@ -75,14 +83,15 @@ router.post("/login", validate(loginSchema), async (req, res, next) => {
         }
 
         const token = generateToken(user._id);
+        const role = resolveRole(user);
         res.status(200).json({
             success: true,
             data: {
                 id: user._id,
                 username: user.username,
                 email: user.email,
-                role: user.role,
-                isAdmin: user.role === ROLES.ADMIN,
+                role,
+                isAdmin: role === ROLES.ADMIN,
                 token,
             },
             message: "Logged in successfully",
@@ -95,9 +104,14 @@ router.post("/login", validate(loginSchema), async (req, res, next) => {
 // ─── Profile ──────────────────────────────────────────────────────
 router.get("/profile", protect, async (req, res, next) => {
     try {
+        const role = resolveRole(req.user);
         res.status(200).json({
             success: true,
-            data: req.user,
+            data: {
+                ...req.user.toObject(),
+                role,
+                isAdmin: role === ROLES.ADMIN,
+            },
             message: "Profile fetched",
         });
     } catch (err) {
@@ -127,7 +141,8 @@ router.delete("/:id", protect, admin, async (req, res, next) => {
             res.status(404);
             throw new Error("User not found");
         }
-        if (user.role === ROLES.ADMIN) {
+        const role = resolveRole(user);
+        if (role === ROLES.ADMIN) {
             res.status(400);
             throw new Error("Cannot delete an admin user");
         }
