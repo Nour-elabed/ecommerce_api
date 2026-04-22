@@ -6,6 +6,7 @@ import { admin } from "../middleware/admin.js";
 import validate from "../middleware/validate.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
+import { ROLES } from "../constants/roles.js";
 
 const router = express.Router();
 
@@ -38,12 +39,19 @@ router.post("/register", validate(registerSchema), async (req, res, next) => {
 
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
-        const newUser = await User.create({ username, email, password: hashedPassword });
+        const newUser = await User.create({ username, email, password: hashedPassword, role: ROLES.USER });
 
         const token = generateToken(newUser._id);
         res.status(201).json({
             success: true,
-            data: { id: newUser._id, username: newUser.username, email: newUser.email, token },
+            data: {
+                id: newUser._id,
+                username: newUser.username,
+                email: newUser.email,
+                role: newUser.role,
+                isAdmin: newUser.role === ROLES.ADMIN,
+                token,
+            },
             message: "Account created successfully",
         });
     } catch (err) {
@@ -69,7 +77,14 @@ router.post("/login", validate(loginSchema), async (req, res, next) => {
         const token = generateToken(user._id);
         res.status(200).json({
             success: true,
-            data: { id: user._id, username: user.username, email: user.email, isAdmin: user.isAdmin, token },
+            data: {
+                id: user._id,
+                username: user.username,
+                email: user.email,
+                role: user.role,
+                isAdmin: user.role === ROLES.ADMIN,
+                token,
+            },
             message: "Logged in successfully",
         });
     } catch (err) {
@@ -112,7 +127,7 @@ router.delete("/:id", protect, admin, async (req, res, next) => {
             res.status(404);
             throw new Error("User not found");
         }
-        if (user.isAdmin) {
+        if (user.role === ROLES.ADMIN) {
             res.status(400);
             throw new Error("Cannot delete an admin user");
         }
