@@ -32,6 +32,11 @@ const orderSchema = mongoose.Schema(
             enum: ["Cash on Delivery", "Card", "PayPal"],
             default: "Cash on Delivery",
         },
+        status: {
+            type: String,
+            enum: ["pending", "shipped", "delivered", "canceled"],
+            default: "pending",
+        },
         totalPrice: {
             type: Number,
             required: true,
@@ -52,6 +57,17 @@ const orderSchema = mongoose.Schema(
     },
     { timestamps: true }
 );
+
+orderSchema.pre("save", function syncDeliveryFromStatus(next) {
+    if (this.status === "delivered") {
+        this.isDelivered = true;
+        this.deliveredAt = this.deliveredAt || new Date();
+    } else if (this.status !== "delivered") {
+        this.isDelivered = false;
+        this.deliveredAt = undefined;
+    }
+    next();
+});
 
 const Order = mongoose.model("Order", orderSchema);
 export default Order;

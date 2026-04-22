@@ -2,6 +2,10 @@ import mongoose from "mongoose";
 
 const productSchema = mongoose.Schema(
     {
+        title: {
+            type: String,
+            trim: true,
+        },
         name: {
             type: String,
             required: true,
@@ -44,6 +48,12 @@ const productSchema = mongoose.Schema(
     },
     { timestamps: true }
 );
+
+productSchema.pre("validate", function syncTitleAndName(next) {
+    if (!this.name && this.title) this.name = this.title;
+    if (!this.title && this.name) this.title = this.name;
+    next();
+});
 
 const Product = mongoose.model("Product", productSchema);
 export default Product;
