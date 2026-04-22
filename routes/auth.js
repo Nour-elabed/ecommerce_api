@@ -143,6 +143,6 @@ router.delete("/:id", protect, admin, async (req, res, next) => {
 
 // ─── Helper ───────────────────────────────────────────────────────
 const generateToken = (id) =>
-    jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "30d" });
+    jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || "30d" });
 
 export default router;
