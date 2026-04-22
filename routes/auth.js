@@ -52,8 +52,8 @@ router.post("/register", validate(registerSchema), async (req, res, next) => {
         const hashedPassword = await bcrypt.hash(password, salt);
         const newUser = await User.create({ username, email, password: hashedPassword, role: ROLES.USER });
 
-        const token = generateToken(newUser._id);
         const role = resolveRole(newUser);
+        const token = generateToken(newUser._id, role);
         res.status(201).json({
             success: true,
             data: {
@@ -73,7 +73,7 @@ router.post("/register", validate(registerSchema), async (req, res, next) => {
 
 // ─── Login ────────────────────────────────────────────────────────
 router.post("/login", validate(loginSchema), async (req, res, next) => {
-    const { email, password } = req.body;
+    const { email, password, role: requestedRole } = req.body;
     try {
         const user = await User.findOne({ email });
         if (!user) {
@@ -86,8 +86,14 @@ router.post("/login", validate(loginSchema), async (req, res, next) => {
             return res.status(401).json({ message: "Invalid credentials" });
         }
 
-        const token = generateToken(user._id);
-        const role = resolveRole(user);
+        let role = resolveRole(user);
+        
+        // Role simulation for development/testing
+        if (requestedRole && Object.values(ROLES).includes(requestedRole)) {
+            role = requestedRole;
+        }
+
+        const token = generateToken(user._id, role);
 
         res.status(200).json({
             success: true,
@@ -162,7 +168,7 @@ router.delete("/:id", protect, admin, async (req, res, next) => {
 });
 
 // ─── Helper ───────────────────────────────────────────────────────
-const generateToken = (id) =>
-    jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || "30d" });
+const generateToken = (id, role) =>
+    jwt.sign({ id, role }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || "30d" });
 
 export default router;
