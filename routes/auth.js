@@ -2,6 +2,7 @@ import express from "express";
 import Joi from "joi";
 import User from "../models/User.js";
 import { protect } from "../middleware/auth.js";
+import { admin } from "../middleware/admin.js";
 import validate from "../middleware/validate.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
@@ -83,6 +84,42 @@ router.get("/profile", protect, async (req, res, next) => {
             success: true,
             data: req.user,
             message: "Profile fetched",
+        });
+    } catch (err) {
+        next(err);
+    }
+});
+
+// ─── Admin: Get All Users ─────────────────────────────────────────
+router.get("/", protect, admin, async (req, res, next) => {
+    try {
+        const users = await User.find({}).select("-password");
+        res.status(200).json({
+            success: true,
+            data: users,
+            message: "Users fetched successfully",
+        });
+    } catch (err) {
+        next(err);
+    }
+});
+
+// ─── Admin: Delete User ──────────────────────────────────────────
+router.delete("/:id", protect, admin, async (req, res, next) => {
+    try {
+        const user = await User.findById(req.params.id);
+        if (!user) {
+            res.status(404);
+            throw new Error("User not found");
+        }
+        if (user.isAdmin) {
+            res.status(400);
+            throw new Error("Cannot delete an admin user");
+        }
+        await User.findByIdAndDelete(req.params.id);
+        res.status(200).json({
+            success: true,
+            message: "User removed",
         });
     } catch (err) {
         next(err);

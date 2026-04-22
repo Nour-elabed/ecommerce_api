@@ -11,6 +11,7 @@ export const createOrder = async (req, res, next) => {
             throw new Error("No order items provided");
         }
 
+        
         // Simulate payment: card/paypal = immediately paid
         const isPaid = paymentMethod !== "Cash on Delivery";
 
@@ -56,6 +57,35 @@ export const getOrderById = async (req, res, next) => {
             throw new Error("Not authorized to view this order");
         }
         res.status(200).json({ success: true, data: order, message: "Order fetched" });
+    } catch (err) {
+        next(err);
+    }
+};
+
+// ─── GET /api/orders (admin) ──────────────────────────────────────
+export const getOrders = async (req, res, next) => {
+    try {
+        const orders = await Order.find({}).populate("user", "id username").sort({ createdAt: -1 });
+        res.status(200).json({ success: true, data: orders, message: "All orders fetched" });
+    } catch (err) {
+        next(err);
+    }
+};
+
+// ─── PUT /api/orders/:id/deliver (admin) ──────────────────────────
+export const updateOrderToDelivered = async (req, res, next) => {
+    try {
+        const order = await Order.findById(req.params.id);
+        if (!order) {
+            res.status(404);
+            throw new Error("Order not found");
+        }
+
+        order.isDelivered = true;
+        order.deliveredAt = Date.now();
+        const updatedOrder = await order.save();
+
+        res.status(200).json({ success: true, data: updatedOrder, message: "Order marked as delivered" });
     } catch (err) {
         next(err);
     }
