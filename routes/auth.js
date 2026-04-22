@@ -62,7 +62,7 @@ router.post("/register", validate(registerSchema), async (req, res, next) => {
                 username: newUser.username,
                 email: newUser.email,
                 role,
-                isAdmin: role === ROLES.ADMIN,
+                isAdmin: isElevatedRole(role),
                 token,
             },
             message: "Account created successfully",
