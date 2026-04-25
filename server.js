@@ -25,7 +25,7 @@ app.use(helmet()); // Sets secure HTTP response headers
 
 app.use(
     cors({
-        origin: CLIENT_URL,
+        origin: ["http://localhost:5173", "http://localhost:3000", CLIENT_URL],
         credentials: true,
     })
 );
