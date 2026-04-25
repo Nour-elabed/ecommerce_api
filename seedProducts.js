@@ -2,8 +2,7 @@
  * Product Seeder Script
  * Run from Backend/ directory: node seedProducts.js
  *
- * Seeds 12 diverse products across categories:
- * Electronics, Clothing, Accessories, Home, Sports, Beauty
+ * Seeds diverse watches for MEN and WOMEN categories
  */
 import dotenv from "dotenv";
 dotenv.config();
@@ -13,31 +12,89 @@ import { connectDB } from "./config/db.js";
 import Product from "./models/Product.js";
 
 const products = [
+    // MEN'S WATCHES
     {
-        name: "Black Automatic Watch",
-        description: "Premium automatic movement watch with sapphire crystal glass and genuine leather strap. Water resistant to 50m.",
-        price: 169.99,
-        category: "Accessories",
-        image: "/assets/images/watch.svg",
-        stock: 25,
-        rating: 4.9,
-        numReviews: 98,
+        name: "Classic Men's Chronograph",
+        description: "Elegant men's watch with chronograph function, stainless steel case, and genuine leather strap. Perfect for business and casual wear.",
+        price: 299.99,
+        category: "MEN",
+        image: "/assets/images/mens-watch-1.jpg",
+        stock: 15,
+        rating: 4.7,
+        numReviews: 124,
     },
     {
-        name: "Wireless Noise-Cancelling Headphones",
-        description: "40-hour battery life, Bluetooth 5.0, active noise cancellation. Foldable design for portability.",
-        price: 249.99,
-        category: "Electronics",
-        image: "/assets/images/watch.svg",
-        stock: 40,
+        name: "Sport Men's Diver Watch",
+        description: "Professional men's dive watch with 200m water resistance, unidirectional bezel, and luminous hands. Built for adventure.",
+        price: 449.99,
+        category: "MEN",
+        image: "/assets/images/mens-watch-2.jpg",
+        stock: 8,
         rating: 4.8,
-        numReviews: 215,
+        numReviews: 89,
     },
     {
-        name: "Men's Slim Fit Dress Shirt",
-        description: "100% premium cotton, wrinkle resistant. Available in white and light blue. Perfect for business casual.",
-        price: 49.99,
-        category: "Clothing",
+        name: "Minimalist Men's Watch",
+        description: "Clean and minimalist men's watch design with Japanese movement, mesh strap, and date function. Modern sophistication.",
+        price: 189.99,
+        category: "MEN",
+        image: "/assets/images/mens-watch-3.jpg",
+        stock: 22,
+        rating: 4.6,
+        numReviews: 156,
+    },
+    {
+        name: "Luxury Men's Automatic",
+        description: "Premium men's automatic watch with exhibition case back, blue hands, and alligator leather strap. Swiss movement.",
+        price: 899.99,
+        category: "MEN",
+        image: "/assets/images/mens-watch-4.jpg",
+        stock: 5,
+        rating: 4.9,
+        numReviews: 67,
+    },
+    // WOMEN'S WATCHES
+    {
+        name: "Elegant Women's Watch",
+        description: "Delicate women's watch with mother-of-pearl dial, rose gold case, and bracelet strap. Perfect for special occasions.",
+        price: 259.99,
+        category: "WOMEN",
+        image: "/assets/images/womens-watch-1.jpg",
+        stock: 18,
+        rating: 4.8,
+        numReviews: 203,
+    },
+    {
+        name: "Women's Fashion Watch",
+        description: "Trendy women's watch with crystal-studded bezel, pink dial, and silicone strap. Water resistant and stylish.",
+        price: 149.99,
+        category: "WOMEN",
+        image: "/assets/images/womens-watch-2.jpg",
+        stock: 31,
+        rating: 4.5,
+        numReviews: 178,
+    },
+    {
+        name: "Classic Women's Timepiece",
+        description: "Timeless women's watch with Roman numerals, two-tone case, and expandable bracelet. Versatile elegance.",
+        price: 329.99,
+        category: "WOMEN",
+        image: "/assets/images/womens-watch-3.jpg",
+        stock: 12,
+        rating: 4.7,
+        numReviews: 94,
+    },
+    {
+        name: "Sport Women's Watch",
+        description: "Active women's sports watch with stopwatch function, durable case, and comfortable rubber strap. Built for performance.",
+        price: 199.99,
+        category: "WOMEN",
+        image: "/assets/images/womens-watch-4.jpg",
+        stock: 25,
+        rating: 4.6,
+        numReviews: 142,
+    }
+];
         image: "/assets/images/watch.svg",
         stock: 80,
         rating: 4.5,
