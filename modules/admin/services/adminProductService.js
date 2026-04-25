@@ -1,20 +1,14 @@
 import { adminProductRepository } from "../repositories/adminProductRepository.js";
 
-const toPersistenceProduct = (payload) => ({
-    ...payload,
-    title: payload.title,
-    name: payload.title,
-});
-
 export const adminProductService = {
     async createProduct(payload) {
-        return adminProductRepository.create(toPersistenceProduct(payload));
+        return adminProductRepository.create(payload);
     },
     async getProducts() {
         return adminProductRepository.findAll();
     },
     async updateProduct(id, payload) {
-        const product = await adminProductRepository.updateById(id, toPersistenceProduct(payload));
+        const product = await adminProductRepository.updateById(id, payload);
         if (!product) {
             const error = new Error("Product not found");
             error.statusCode = 404;

@@ -2,11 +2,12 @@ import mongoose from "mongoose";
 
 const productSchema = mongoose.Schema(
     {
-        title: {
+        name: {
             type: String,
+            required: true,
             trim: true,
         },
-        name: {
+        brand: {
             type: String,
             required: true,
             trim: true,
@@ -23,8 +24,14 @@ const productSchema = mongoose.Schema(
         category: {
             type: String,
             required: true,
-            enum: ["MEN", "WOMEN"],
-            default: "MEN",
+            enum: ["Luxury", "Sport", "Classic", "Smart", "Minimalist"],
+            default: "Classic",
+        },
+        gender: {
+            type: String,
+            required: true,
+            enum: ["MEN", "WOMEN", "UNISEX"],
+            default: "UNISEX",
         },
         image: {
             type: String,
@@ -49,12 +56,6 @@ const productSchema = mongoose.Schema(
     },
     { timestamps: true }
 );
-
-productSchema.pre("validate", function syncTitleAndName(next) {
-    if (!this.name && this.title) this.name = this.title;
-    if (!this.title && this.name) this.title = this.name;
-    next();
-});
 
 const Product = mongoose.model("Product", productSchema);
 export default Product;

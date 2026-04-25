@@ -38,8 +38,18 @@ userSchema.virtual("isAdmin").get(function getIsAdmin() {
     return this.role === ROLES.ADMIN || this.role === ROLES.SUPER_ADMIN;
 });
 
-// Pre-save middleware to enforce role constraints
+// Match user entered password to hashed password in database
+userSchema.methods.matchPassword = async function(enteredPassword) {
+    return await bcrypt.compare(enteredPassword, this.password);
+};
+
+// Pre-save middleware to hash password and enforce role constraints
 userSchema.pre("save", async function(next) {
+    if (this.isModified("password")) {
+        const salt = await bcrypt.genSalt(10);
+        this.password = await bcrypt.hash(this.password, salt);
+    }
+
     // Check if this is a new user being created as ADMIN
     if (this.isNew && this.role === ROLES.ADMIN) {
         const error = new Error("Users cannot register as ADMIN. ADMIN role can only be assigned by SUPER_ADMIN.");
