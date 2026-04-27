@@ -2,6 +2,13 @@ import User from "../models/User.js";
 import jwt from "jsonwebtoken";
 import { ROLES } from "../constants/roles.js";
 
+const safeNext = (next, res) => (err) => {
+    // In rare deployment mismatches, handlers can be invoked without Express' `next`.
+    // This prevents `next is not a function` from crashing the request.
+    if (typeof next === "function") return next(err);
+    return res.status(500).json({ success: false, message: err?.message || "Internal Server Error" });
+};
+
 const generateToken = (id, role) =>
     jwt.sign({ id, role }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || "30d" });
 
@@ -18,6 +25,7 @@ const isElevatedRole = (role) => role === ROLES.ADMIN || role === ROLES.SUPER_AD
 export const registerUser = async (req, res, next) => {
     const { username, email, password } = req.body;
     try {
+        const fail = safeNext(next, res);
         const userExists = await User.findOne({ email });
         if (userExists) {
             res.status(400);
@@ -46,7 +54,7 @@ export const registerUser = async (req, res, next) => {
             message: "Account created successfully",
         });
     } catch (err) {
-        next(err);
+        safeNext(next, res)(err);
     }
 };
 
@@ -56,6 +64,7 @@ export const registerUser = async (req, res, next) => {
 export const loginUser = async (req, res, next) => {
     const { email, password, role: requestedRole } = req.body;
     try {
+        const fail = safeNext(next, res);
         const user = await User.findOne({ email });
         if (!user || !(await user.matchPassword(password))) {
             res.status(401);
@@ -82,7 +91,7 @@ export const loginUser = async (req, res, next) => {
             message: "Logged in successfully",
         });
     } catch (err) {
-        next(err);
+        safeNext(next, res)(err);
     }
 };
 
@@ -91,6 +100,7 @@ export const loginUser = async (req, res, next) => {
 // @access  Private
 export const getUserProfile = async (req, res, next) => {
     try {
+        const fail = safeNext(next, res);
         const user = await User.findById(req.user._id);
         if (user) {
             const role = resolveRole(user);
@@ -111,7 +121,7 @@ export const getUserProfile = async (req, res, next) => {
             throw new Error("User not found");
         }
     } catch (err) {
-        next(err);
+        safeNext(next, res)(err);
     }
 };
 
@@ -120,6 +130,7 @@ export const getUserProfile = async (req, res, next) => {
 // @access  Private
 export const updateUserProfile = async (req, res, next) => {
     try {
+        const fail = safeNext(next, res);
         const user = await User.findById(req.user._id);
         if (user) {
             user.username = req.body.username || user.username;
@@ -149,6 +160,6 @@ export const updateUserProfile = async (req, res, next) => {
             throw new Error("User not found");
         }
     } catch (err) {
-        next(err);
+        safeNext(next, res)(err);
     }
 };
