@@ -54,7 +54,7 @@ export const registerUser = async (req, res, next) => {
 // @route   POST /api/auth/login
 // @access  Public
 export const loginUser = async (req, res, next) => {
-    const { email, password } = req.body;
+    const { email, password, role: requestedRole } = req.body;
     try {
         const user = await User.findOne({ email });
         if (!user || !(await user.matchPassword(password))) {
@@ -63,6 +63,10 @@ export const loginUser = async (req, res, next) => {
         }
 
         const role = resolveRole(user);
+        if (requestedRole !== role) {
+            res.status(403);
+            throw new Error(`This account does not have ${requestedRole} access`);
+        }
         const token = generateToken(user._id, role);
 
         res.status(200).json({

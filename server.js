@@ -48,6 +48,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // ─── Routes ───────────────────────────────────────────────────────
+// Backward compatible auth mount points (frontend uses /users)
+app.use("/api/users", authRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/products", productRoutes);

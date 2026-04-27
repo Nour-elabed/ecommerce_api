@@ -24,6 +24,7 @@ const registerSchema = Joi.object({
 const loginSchema = Joi.object({
     email: Joi.string().email().required(),
     password: Joi.string().required(),
+    role: Joi.string().valid(ROLES.USER, ROLES.ADMIN, ROLES.SUPER_ADMIN).required(),
 });
 
 const profileUpdateSchema = Joi.object({
