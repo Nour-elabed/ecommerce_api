@@ -63,7 +63,7 @@ export const loginUser = async (req, res, next) => {
         }
 
         const role = resolveRole(user);
-        if (requestedRole !== role) {
+        if (requestedRole && requestedRole !== "AUTO" && requestedRole !== role) {
             res.status(403);
             throw new Error(`This account does not have ${requestedRole} access`);
         }
