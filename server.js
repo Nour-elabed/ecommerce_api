@@ -23,6 +23,21 @@ const app = express();
 // ─── Security Middleware ──────────────────────────────────────────
 app.use(helmet()); // Sets secure HTTP response headers
 
+// ─── Health Check (for Render/Vercel debugging) ───────────────────
+// Lets you verify which build is deployed on Render.
+app.get("/api/health", (req, res) => {
+    res.status(200).json({
+        ok: true,
+        service: "ecommerce_api",
+        env: process.env.NODE_ENV || "unknown",
+        version:
+            process.env.RENDER_GIT_COMMIT ||
+            process.env.VERCEL_GIT_COMMIT_SHA ||
+            process.env.APP_VERSION ||
+            "unknown",
+    });
+});
+
 app.use(
     cors({
         origin: ["http://localhost:5173", "http://localhost:3000", CLIENT_URL],
@@ -46,6 +61,15 @@ app.use(morgan("dev"));
 // ─── Body Parsing ─────────────────────────────────────────────────
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// ─── Invalid JSON Handler ─────────────────────────────────────────
+// Prevents opaque 500s when the client sends malformed JSON.
+app.use((err, req, res, next) => {
+    if (err instanceof SyntaxError && "body" in err) {
+        return res.status(400).json({ success: false, message: "Invalid JSON body" });
+    }
+    return next(err);
+});
 
 // ─── Routes ───────────────────────────────────────────────────────
 // Backward compatible auth mount points (frontend uses /users)
