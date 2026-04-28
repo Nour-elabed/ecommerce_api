@@ -4,23 +4,9 @@ import { DEFAULT_USER_ROLE, ROLES } from "../constants/roles.js";
 
 const userSchema = mongoose.Schema(
     {
-        username: {
-            type: String,
-            required: true,
-            unique: true,
-            trim: true,
-        },
-        email: {
-            type: String,
-            required: true,
-            unique: true,
-            lowercase: true,
-            trim: true,
-        },
-        password: {
-            type: String,
-            required: true,
-        },
+        username: { type: String, required: true, unique: true, trim: true },
+        email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+        password: { type: String, required: true },
         role: {
             type: String,
             enum: Object.values(ROLES),
@@ -38,31 +24,19 @@ userSchema.virtual("isAdmin").get(function getIsAdmin() {
     return this.role === ROLES.ADMIN || this.role === ROLES.SUPER_ADMIN;
 });
 
-// Match user entered password to hashed password in database
-userSchema.methods.matchPassword = async function(enteredPassword) {
-    return await bcrypt.compare(enteredPassword, this.password);
+userSchema.methods.matchPassword = async function matchPassword(enteredPassword) {
+    return bcrypt.compare(enteredPassword, this.password);
 };
 
-// Pre-save middleware to hash password and enforce role constraints
-// IMPORTANT: don't mix `async` + `next` in Mongoose middleware.
-// Use promise-style middleware and throw errors.
-userSchema.pre("save", async function () {
+userSchema.pre("save", async function preSave() {
     if (this.isModified("password")) {
         const salt = await bcrypt.genSalt(10);
         this.password = await bcrypt.hash(this.password, salt);
     }
 
-    // Check if this is a new user being created as ADMIN
-    if (this.isNew && this.role === ROLES.ADMIN) {
-        throw new Error("Users cannot register as ADMIN. ADMIN role can only be assigned by SUPER_ADMIN.");
-    }
-
-    // Prevent multiple SUPER_ADMINs
-    if (this.isModified("role") && this.role === ROLES.SUPER_ADMIN) {
-        const existingSuperAdmin = await this.constructor.findOne({ role: ROLES.SUPER_ADMIN });
-        if (existingSuperAdmin && (!this._id || existingSuperAdmin._id.toString() !== this._id.toString())) {
-            throw new Error("Only one SUPER_ADMIN can exist in the system.");
-        }
+    // Block creating new accounts with elevated roles unless explicitly bypassed (seeder).
+    if (this.isNew && !this.__skipRoleGuard && this.role !== ROLES.USER) {
+        throw new Error("New accounts must use the USER role.");
     }
 });
 

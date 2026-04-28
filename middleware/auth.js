@@ -2,38 +2,27 @@ import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 
 export const protect = async (req, res, next) => {
-    let token;
+    const authHeader = req.headers.authorization;
 
-    if (
-        req.headers.authorization &&
-        req.headers.authorization.startsWith("Bearer")
-    ) {
-        try {
-            token = req.headers.authorization.split(" ")[1];
-
-            const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-            req.user = await User.findById(decoded.id).select("-password");
-            
-            // Add role from JWT token to req.user
-            if (decoded.role) {
-                req.user.role = decoded.role;
-            }
-            if (!req.user) {
-                res.status(401);
-                throw new Error("Not authorized, user not found");
-            }
-
-            return next();
-        } catch (error) {
-            console.error(error);
-            res.status(401);
-            return next(new Error("Not authorized, token failed"));
-        }
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        return res.status(401).json({ success: false, message: "Not authorized, no token provided" });
     }
 
-    if (!token) {
-        res.status(401);
-        return next(new Error("Not authorized, no token"));
+    const token = authHeader.split(" ")[1];
+
+    let decoded;
+    try {
+        decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch {
+        return res.status(401).json({ success: false, message: "Not authorized, token invalid or expired" });
     }
+
+    const user = await User.findById(decoded.id).select("-password");
+    if (!user) {
+        return res.status(401).json({ success: false, message: "Not authorized, user not found" });
+    }
+
+    // Role is always read from DB document, never from the JWT payload.
+    req.user = user;
+    return next();
 };

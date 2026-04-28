@@ -1,5 +1,4 @@
 import Joi from "joi";
-import { ROLES } from "../../../constants/roles.js";
 
 export const adminCreateOrUpdateProductSchema = Joi.object({
     name: Joi.string().min(2).max(150).required(),
@@ -12,12 +11,7 @@ export const adminCreateOrUpdateProductSchema = Joi.object({
     gender: Joi.string().valid("MEN", "WOMEN", "UNISEX").required(),
 });
 
-export const adminUpdateUserRoleSchema = Joi.object({
-    role: Joi.string()
-        .valid(ROLES.USER, ROLES.ADMIN)
-        .required(),
-});
-
 export const adminUpdateOrderStatusSchema = Joi.object({
     status: Joi.string().valid("pending", "shipped", "delivered", "canceled").required(),
 });
+

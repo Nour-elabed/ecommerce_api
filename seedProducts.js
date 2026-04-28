@@ -1,7 +1,6 @@
 import dotenv from "dotenv";
-dotenv.config({ path: '.env.local' });
+dotenv.config();
 
-import mongoose from "mongoose";
 import { connectDB } from "./config/db.js";
 import Product from "./models/Product.js";
 
