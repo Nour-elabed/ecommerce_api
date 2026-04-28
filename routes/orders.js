@@ -7,7 +7,7 @@ import {
     updateOrderToDelivered,
 } from "../controllers/orderController.js";
 import { protect } from "../middleware/auth.js";
-import { admin } from "../middleware/admin.js";
+import { isAdmin } from "../middleware/authorize.js";
 
 const router = express.Router();
 
@@ -17,7 +17,7 @@ router.get("/my", protect, getUserOrders);
 router.get("/:id", protect, getOrderById);
 
 // Admin-only routes
-router.get("/", protect, admin, getOrders);
-router.put("/:id/deliver", protect, admin, updateOrderToDelivered);
+router.get("/", protect, isAdmin, getOrders);
+router.put("/:id/deliver", protect, isAdmin, updateOrderToDelivered);
 
 export default router;
