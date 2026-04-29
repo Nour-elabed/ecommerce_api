@@ -14,11 +14,25 @@
 import dotenv from "dotenv";
 dotenv.config();
 
+console.log("[seed] script started, node", process.version);
+console.log("[seed] MONGO_URI present:", Boolean(process.env.MONGO_URI));
+
+process.on("uncaughtException", (err) => {
+    console.error("[seed] uncaughtException:", err);
+    process.exit(1);
+});
+process.on("unhandledRejection", (err) => {
+    console.error("[seed] unhandledRejection:", err);
+    process.exit(1);
+});
+
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 import { connectDB } from "./config/db.js";
 import User from "./models/User.js";
 import { ROLES } from "./constants/roles.js";
+
+console.log("[seed] imports loaded");
 
 const DEFAULT_EMAIL = process.env.SUPER_ADMIN_EMAIL || "superadmin@example.com";
 const DEFAULT_USERNAME = process.env.SUPER_ADMIN_USERNAME || "SuperAdmin";
@@ -91,17 +105,22 @@ const createDefault = async () => {
 
 const run = async () => {
     try {
+        console.log("[seed] calling connectDB...");
         await connectDB();
+        console.log("[seed] connectDB returned");
         const email = parseEmailFlag();
         if (email) {
+            console.log(`[seed] promoting ${email}...`);
             await promoteByEmail(email);
         } else {
+            console.log("[seed] creating default super admin...");
             await createDefault();
         }
     } catch (error) {
-        console.error("Seeder failed:", error.message);
+        console.error("[seed] failed:", error);
         await exit(1);
     }
 };
 
+console.log("[seed] invoking run()");
 run();
