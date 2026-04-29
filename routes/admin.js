@@ -14,10 +14,14 @@ import {
     updateUserRole,
     deleteUser,
 } from "../controllers/userController.js";
+import { getDashboardStats } from "../controllers/adminStatsController.js";
 
 const router = express.Router();
 
 router.use(protect, isAdmin);
+
+// Dashboard stats (admin + super admin)
+router.get("/stats", getDashboardStats);
 
 // Products (admin + super admin)
 router.get("/products", adminProductController.list);
