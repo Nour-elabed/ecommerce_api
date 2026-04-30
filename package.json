@@ -6,7 +6,9 @@
   "scripts": {
     "start": "nodemon server.js",
     "backfill:roles": "node scripts/backfillUserRoles.js",
-    "seed:products": "node seedProducts.js"
+    "seed:products": "node seedProducts.js",
+    "seed:super": "node seedSuperAdmin.js",
+    "seed:super:print": "node seedSuperAdmin.js --print"
   },
   "keywords": [],
   "author": "",
