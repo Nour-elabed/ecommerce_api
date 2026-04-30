@@ -11,6 +11,7 @@ import cartRoutes from "./routes/cart.js";
 import productRoutes from "./routes/products.js";
 import orderRoutes from "./routes/orders.js";
 import adminRoutes from "./routes/admin.js";
+import setupRoutes from "./routes/setup.js";
 import errorHandler from "./middleware/errorHandler.js";
 
 dotenv.config();
@@ -72,6 +73,8 @@ app.use((err, req, res, next) => {
 });
 
 // ─── Routes ───────────────────────────────────────────────────────
+// One-time SUPER_ADMIN setup (mounted before other routes; self-disables after first success)
+app.use("/api/setup", setupRoutes);
 // Backward compatible auth mount points (frontend uses /users)
 app.use("/api/users", authRoutes);
 app.use("/api/auth", authRoutes);
