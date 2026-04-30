@@ -60,8 +60,9 @@ app.use("/api", limiter);
 app.use(morgan("dev"));
 
 // ─── Body Parsing ─────────────────────────────────────────────────
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// 10mb is enough for base64-encoded images up to ~7MB original.
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 // ─── Invalid JSON Handler ─────────────────────────────────────────
 // Prevents opaque 500s when the client sends malformed JSON.

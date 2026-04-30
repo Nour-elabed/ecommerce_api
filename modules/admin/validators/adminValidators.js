@@ -6,7 +6,7 @@ export const adminCreateOrUpdateProductSchema = Joi.object({
     description: Joi.string().min(10).max(3000).required(),
     price: Joi.number().min(0).required(),
     stock: Joi.number().integer().min(0).required(),
-    image: Joi.string().allow("").required(),
+    image: Joi.string().allow("").max(10 * 1024 * 1024).required(),
     category: Joi.string().valid("Luxury", "Sport", "Classic", "Smart", "Minimalist").required(),
     gender: Joi.string().valid("MEN", "WOMEN", "UNISEX").required(),
 });
