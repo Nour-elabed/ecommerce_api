@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import { Buffer, timingSafeEqual } from "crypto";
+import { timingSafeEqual } from "crypto";
 import User from "../models/User.js";
 import { ROLES } from "../constants/roles.js";
 
