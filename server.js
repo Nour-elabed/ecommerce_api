@@ -42,7 +42,7 @@ app.get("/api/health", (req, res) => {
 
 app.use(
     cors({
-        origin: ["http://localhost:5173", "http://localhost:3000", CLIENT_URL],
+        origin: ["http://localhost:5173", "http://localhost:5174", "http://localhost:3000", CLIENT_URL],
         credentials: true,
     })
 );

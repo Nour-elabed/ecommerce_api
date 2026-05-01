@@ -1,4 +1,6 @@
+import mongoose from "mongoose";
 import Product from "../models/Product.js";
+import User from "../models/User.js";
 
 // @desc    Fetch all products with advanced filtering
 // @route   GET /api/products
@@ -63,13 +65,43 @@ export const getAllProducts = async (req, res, next) => {
         // Pagination
         const skip = (Number(page) - 1) * Number(limit);
 
-        const products = await Product.find(query)
+        let products = await Product.find(query)
             .populate("seller", "username email")
             .sort(sortBy)
             .skip(skip)
             .limit(Number(limit));
 
-        const total = await Product.countDocuments(query);
+        let total = await Product.countDocuments(query);
+
+        // AUTO-SEED: If DB is empty and no search/filters are applied, seed it!
+        if (total === 0 && !category && !brand && !gender && !search) {
+            console.log("Database empty, auto-seeding products...");
+            try {
+                // Import seed data or define here
+                const seedData = [
+                    { name: "Rolex Submariner", brand: "Rolex", category: "Luxury", gender: "MEN", price: 8500, stock: 10, image: "https://images.unsplash.com/photo-1523170335258-f5ed11644a13", description: "The iconic diver's watch." },
+                    { name: "Omega Seamaster", brand: "Omega", category: "Sport", gender: "MEN", price: 5200, stock: 15, image: "https://images.unsplash.com/photo-1524592094714-0f0654e20314", description: "Professional dive watch." },
+                    { name: "Cartier Tank", brand: "Cartier", category: "Classic", gender: "WOMEN", price: 3400, stock: 8, image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30", description: "Timeless elegance." },
+                    { name: "Tag Heuer Carrera", brand: "Tag Heuer", category: "Sport", gender: "UNISEX", price: 2900, stock: 12, image: "https://images.unsplash.com/photo-1548178397-51c5e071d4d7", description: "Racing inspired." },
+                    { name: "Seiko Prospex", brand: "Seiko", category: "Sport", gender: "MEN", price: 450, stock: 30, image: "https://images.unsplash.com/photo-1508685096489-7aac29a8a244", description: "Reliable tool watch." },
+                    { name: "Casio G-Shock", brand: "Casio", category: "Sport", gender: "UNISEX", price: 120, stock: 50, image: "https://images.unsplash.com/photo-1547996160-81dfa63595dd", description: "Virtually indestructible." }
+                ];
+                
+                // Assign a default admin seller if possible
+                const User = mongoose.model("User");
+                const admin = await User.findOne({ role: { $in: ["admin", "super_admin"] } });
+                const sellerId = admin?._id;
+
+                const seededProducts = seedData.map(p => ({ ...p, seller: sellerId }));
+                await Product.insertMany(seededProducts);
+                
+                // Re-fetch
+                products = await Product.find(query).populate("seller", "username email").sort(sortBy).limit(Number(limit));
+                total = await Product.countDocuments(query);
+            } catch (seedErr) {
+                console.error("Auto-seed failed:", seedErr);
+            }
+        }
 
         res.status(200).json({
             success: true,
@@ -79,7 +111,7 @@ export const getAllProducts = async (req, res, next) => {
                 page: Number(page),
                 pages: Math.ceil(total / Number(limit))
             },
-            message: "Products fetched"
+            message: products.length > 0 ? "Products fetched" : "No products found"
         });
     } catch (err) {
         next(err);

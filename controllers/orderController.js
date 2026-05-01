@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Order from "../models/Order.js";
 import Product from "../models/Product.js";
 import User from "../models/User.js";
@@ -35,9 +36,16 @@ export const createOrder = async (req, res, next) => {
             }
 
             // Try to find the product
-            let product = await Product.findById(productId);
+            let product = null;
             
-            // If product not found in DB, use a default seller (for seed products)
+            // CRITICAL: Validate ObjectId to prevent 500 cast errors
+            if (mongoose.Types.ObjectId.isValid(productId)) {
+                product = await Product.findById(productId);
+            } else {
+                console.warn(`Invalid Product ID provided: ${productId}. This might be seed data.`);
+            }
+            
+            // If product not found in DB, use a default seller (for seed products or missing ones)
             let sellerId = product?.seller;
             if (!sellerId) {
                 // Find an admin user to assign as seller, or use a placeholder
@@ -45,8 +53,14 @@ export const createOrder = async (req, res, next) => {
                 sellerId = adminUser?._id || req.user._id;
             }
 
+            // Generate a valid ObjectId for the product field if the input was a seed ID
+            // This ensures the order can still be saved in the database
+            const finalProductId = mongoose.Types.ObjectId.isValid(productId) 
+                ? productId 
+                : new mongoose.Types.ObjectId(); // Fallback to a random ID for seed data compatibility
+
             enrichedOrderItems.push({
-                product: productId,
+                product: finalProductId,
                 seller: sellerId,
                 name: item.name || 'Unknown Product',
                 image: item.image || '/assets/images/placeholder.svg',
