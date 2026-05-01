@@ -3,7 +3,7 @@ import { adminProductService } from "../services/adminProductService.js";
 export const adminProductController = {
     async create(req, res, next) {
         try {
-            const product = await adminProductService.createProduct(req.body);
+            const product = await adminProductService.createProduct({ ...req.body, seller: req.user._id });
             res.status(201).json({ success: true, data: product, message: "Product created successfully" });
         } catch (error) {
             next(error);

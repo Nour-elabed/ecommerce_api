@@ -11,6 +11,7 @@ import cartRoutes from "./routes/cart.js";
 import productRoutes from "./routes/products.js";
 import orderRoutes from "./routes/orders.js";
 import adminRoutes from "./routes/admin.js";
+import sellerRoutes from "./routes/seller.js";
 import setupRoutes from "./routes/setup.js";
 import errorHandler from "./middleware/errorHandler.js";
 
@@ -82,6 +83,7 @@ app.use("/api/cart", cartRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/seller", sellerRoutes);
 
 // ─── Global Error Handler (must be last!) ─────────────────────────
 app.use(errorHandler);

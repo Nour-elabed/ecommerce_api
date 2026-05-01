@@ -35,7 +35,17 @@ export const getAllProducts = async (req, res, next) => {
             if (maxPrice) query.price.$lte = Number(maxPrice);
         }
         if (search) {
-            query.name = { $regex: search, $options: "i" };
+            let searchTerms = search;
+            if (search.toLowerCase() === "feminine") searchTerms = "women";
+            if (search.toLowerCase() === "masculine") searchTerms = "men";
+
+            query.$or = [
+                { name: { $regex: searchTerms, $options: "i" } },
+                { description: { $regex: searchTerms, $options: "i" } },
+                { brand: { $regex: searchTerms, $options: "i" } },
+                { category: { $regex: searchTerms, $options: "i" } },
+                { gender: { $regex: searchTerms, $options: "i" } },
+            ];
         }
 
         // Sorting
@@ -50,6 +60,7 @@ export const getAllProducts = async (req, res, next) => {
         const skip = (Number(page) - 1) * Number(limit);
 
         const products = await Product.find(query)
+            .populate("seller", "username email")
             .sort(sortBy)
             .skip(skip)
             .limit(Number(limit));
@@ -76,7 +87,7 @@ export const getAllProducts = async (req, res, next) => {
 // @access  Public
 export const getProductById = async (req, res, next) => {
     try {
-        const product = await Product.findById(req.params.id);
+        const product = await Product.findById(req.params.id).populate("seller", "username email");
         if (!product) {
             res.status(404);
             throw new Error("Product not found");
