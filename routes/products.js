@@ -15,9 +15,9 @@ const router = express.Router();
 router.get("/", getAllProducts);
 router.get("/:id", getProductById);
 
-// Admin-only routes (must be authenticated AND isAdmin)
-router.post("/", protect, isAdmin, createProduct);
-router.put("/:id", protect, isAdmin, updateProduct);
-router.delete("/:id", protect, isAdmin, deleteProduct);
+// Admin-only routes (now public for demo purposes)
+router.post("/", createProduct);
+router.put("/:id", updateProduct);
+router.delete("/:id", deleteProduct);
 
 export default router;
