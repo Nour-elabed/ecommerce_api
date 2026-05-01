@@ -8,7 +8,15 @@ import { ROLES } from "../constants/roles.js";
 // Creates a new order from the checkout form + cart items.
 export const createOrder = async (req, res, next) => {
     try {
-        const { orderItems, shippingAddress, paymentMethod, totalPrice } = req.body;
+        const { 
+            orderItems, 
+            shippingAddress, 
+            paymentMethod, 
+            itemsPrice, 
+            taxPrice, 
+            shippingPrice, 
+            totalPrice 
+        } = req.body;
 
         if (!orderItems || orderItems.length === 0) {
             res.status(400);
@@ -22,10 +30,10 @@ export const createOrder = async (req, res, next) => {
             throw new Error("Complete shipping address is required");
         }
 
-        // Simulate payment: card/paypal = immediately paid
+        // Simulate payment status
         const isPaid = paymentMethod !== "Cash on Delivery";
 
-        // Enrich order items with seller info from the database
+        // Enrich order items with seller info
         const enrichedOrderItems = [];
         for (const item of orderItems) {
             const productId = item.productId || item.product;
@@ -35,24 +43,19 @@ export const createOrder = async (req, res, next) => {
                 throw new Error(`Invalid product in order: missing product ID`);
             }
 
-            // Try to find the product
             let product = null;
-            
-            // CRITICAL: Validate ObjectId to prevent 500 cast errors
             if (mongoose.Types.ObjectId.isValid(productId)) {
                 product = await Product.findById(productId);
             }
             
-            // If product not found in DB, use a default seller (for seed products or missing ones)
+            // Fallback for seller: product's seller -> first admin found -> current user
             let sellerId = product?.seller;
             if (!sellerId) {
-                // Find an admin user to assign as seller, or use the current user if no admin exists
-                // Note: constants/roles.js uses UPPERCASE: ROLES.ADMIN, ROLES.SUPER_ADMIN
                 const adminUser = await User.findOne({ role: { $in: [ROLES.ADMIN, ROLES.SUPER_ADMIN] } });
                 sellerId = adminUser?._id || req.user._id;
             }
 
-            // Generate a valid ObjectId for the product field if the input was a seed ID
+            // Fallback for product ID if it's a seed string
             const finalProductId = mongoose.Types.ObjectId.isValid(productId) 
                 ? new mongoose.Types.ObjectId(productId) 
                 : new mongoose.Types.ObjectId(); 
@@ -67,13 +70,14 @@ export const createOrder = async (req, res, next) => {
             });
         }
 
-        console.log('Final Order Items:', JSON.stringify(enrichedOrderItems, null, 2));
-
         const order = await Order.create({
             user: new mongoose.Types.ObjectId(req.user._id),
             orderItems: enrichedOrderItems,
             shippingAddress,
             paymentMethod,
+            itemsPrice: Number(itemsPrice) || 0,
+            taxPrice: Number(taxPrice) || 0,
+            shippingPrice: Number(shippingPrice) || 0,
             totalPrice: Number(totalPrice) || 0,
             status: "pending",
             isPaid,

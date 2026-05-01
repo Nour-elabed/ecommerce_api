@@ -38,18 +38,31 @@ const orderSchema = mongoose.Schema(
             enum: ["Cash on Delivery", "Card", "PayPal"],
             default: "Cash on Delivery",
         },
+        itemsPrice: {
+            type: Number,
+            required: true,
+            default: 0.0,
+        },
+        taxPrice: {
+            type: Number,
+            required: true,
+            default: 0.0,
+        },
+        shippingPrice: {
+            type: Number,
+            required: true,
+            default: 0.0,
+        },
+        totalPrice: {
+            type: Number,
+            required: true,
+            default: 0.0,
+        },
         status: {
             type: String,
             enum: ["pending", "shipped", "delivered", "canceled"],
             default: "pending",
         },
-        totalPrice: {
-            type: Number,
-            required: true,
-            default: 0,
-        },
-        // NOTE: In production, isPaid should be set after real payment confirmation.
-        // For now we simulate immediate payment on "Card" or "PayPal" selection.
         isPaid: {
             type: Boolean,
             default: false,
