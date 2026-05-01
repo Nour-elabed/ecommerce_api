@@ -36,8 +36,10 @@ export const getAllProducts = async (req, res, next) => {
         }
         if (search) {
             let searchTerms = search;
-            if (search.toLowerCase() === "feminine") searchTerms = "women";
-            if (search.toLowerCase() === "masculine") searchTerms = "men";
+            
+            // Map common terms to genders
+            if (search.toLowerCase().includes("feminin")) searchTerms = "women";
+            if (search.toLowerCase().includes("masculin")) searchTerms = "men";
 
             query.$or = [
                 { name: { $regex: searchTerms, $options: "i" } },
@@ -109,6 +111,7 @@ export const createProduct = async (req, res, next) => {
             ...req.body,
             price: Number(req.body.price),
             stock: Number(req.body.stock),
+            seller: req.user?._id || req.body.seller, // Prefer logged-in user, fallback to body
         };
         const product = await Product.create(productData);
         res.status(201).json({ success: true, data: product, message: "Product created" });
