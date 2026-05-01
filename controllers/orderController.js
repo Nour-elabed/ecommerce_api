@@ -1,5 +1,6 @@
 import Order from "../models/Order.js";
 import Product from "../models/Product.js";
+import User from "../models/User.js";
 import { ROLES } from "../constants/roles.js";
 
 // ─── POST /api/orders ─────────────────────────────────────────────
@@ -13,27 +14,53 @@ export const createOrder = async (req, res, next) => {
             throw new Error("No order items provided");
         }
 
-        
+        // Validate shipping address
+        if (!shippingAddress || !shippingAddress.fullName || !shippingAddress.address || 
+            !shippingAddress.city || !shippingAddress.postalCode || !shippingAddress.country) {
+            res.status(400);
+            throw new Error("Complete shipping address is required");
+        }
+
         // Simulate payment: card/paypal = immediately paid
         const isPaid = paymentMethod !== "Cash on Delivery";
 
         // Enrich order items with seller info from the database
-        const enrichedOrderItems = await Promise.all(orderItems.map(async (item) => {
-            const product = await Product.findById(item.productId || item.product);
-            if (!product) throw new Error(`Product ${item.name} not found`);
-            return {
-                ...item,
-                product: product._id,
-                seller: product.seller
-            };
-        }));
+        const enrichedOrderItems = [];
+        for (const item of orderItems) {
+            const productId = item.productId || item.product;
+            
+            if (!productId) {
+                res.status(400);
+                throw new Error(`Invalid product in order: missing product ID`);
+            }
+
+            // Try to find the product
+            let product = await Product.findById(productId);
+            
+            // If product not found in DB, use a default seller (for seed products)
+            let sellerId = product?.seller;
+            if (!sellerId) {
+                // Find an admin user to assign as seller, or use a placeholder
+                const adminUser = await User.findOne({ role: { $in: ['admin', 'super_admin'] } });
+                sellerId = adminUser?._id || req.user._id;
+            }
+
+            enrichedOrderItems.push({
+                product: productId,
+                seller: sellerId,
+                name: item.name || 'Unknown Product',
+                image: item.image || '/assets/images/placeholder.svg',
+                price: Number(item.price) || 0,
+                quantity: Number(item.quantity) || 1,
+            });
+        }
 
         const order = await Order.create({
             user: req.user._id,
             orderItems: enrichedOrderItems,
             shippingAddress,
             paymentMethod,
-            totalPrice,
+            totalPrice: Number(totalPrice) || 0,
             status: "pending",
             isPaid,
             paidAt: isPaid ? new Date() : undefined,
@@ -41,6 +68,7 @@ export const createOrder = async (req, res, next) => {
 
         res.status(201).json({ success: true, data: order, message: "Order created successfully" });
     } catch (err) {
+        console.error('Order creation error:', err);
         next(err);
     }
 };
