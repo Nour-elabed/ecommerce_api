@@ -41,27 +41,25 @@ export const createOrder = async (req, res, next) => {
             // CRITICAL: Validate ObjectId to prevent 500 cast errors
             if (mongoose.Types.ObjectId.isValid(productId)) {
                 product = await Product.findById(productId);
-            } else {
-                console.warn(`Invalid Product ID provided: ${productId}. This might be seed data.`);
             }
             
             // If product not found in DB, use a default seller (for seed products or missing ones)
             let sellerId = product?.seller;
             if (!sellerId) {
-                // Find an admin user to assign as seller, or use a placeholder
-                const adminUser = await User.findOne({ role: { $in: ['admin', 'super_admin'] } });
+                // Find an admin user to assign as seller, or use the current user if no admin exists
+                // Note: constants/roles.js uses UPPERCASE: ROLES.ADMIN, ROLES.SUPER_ADMIN
+                const adminUser = await User.findOne({ role: { $in: [ROLES.ADMIN, ROLES.SUPER_ADMIN] } });
                 sellerId = adminUser?._id || req.user._id;
             }
 
             // Generate a valid ObjectId for the product field if the input was a seed ID
-            // This ensures the order can still be saved in the database
             const finalProductId = mongoose.Types.ObjectId.isValid(productId) 
-                ? productId 
-                : new mongoose.Types.ObjectId(); // Fallback to a random ID for seed data compatibility
+                ? new mongoose.Types.ObjectId(productId) 
+                : new mongoose.Types.ObjectId(); 
 
             enrichedOrderItems.push({
                 product: finalProductId,
-                seller: sellerId,
+                seller: new mongoose.Types.ObjectId(sellerId),
                 name: item.name || 'Unknown Product',
                 image: item.image || '/assets/images/placeholder.svg',
                 price: Number(item.price) || 0,
@@ -69,8 +67,10 @@ export const createOrder = async (req, res, next) => {
             });
         }
 
+        console.log('Final Order Items:', JSON.stringify(enrichedOrderItems, null, 2));
+
         const order = await Order.create({
-            user: req.user._id,
+            user: new mongoose.Types.ObjectId(req.user._id),
             orderItems: enrichedOrderItems,
             shippingAddress,
             paymentMethod,
@@ -82,7 +82,8 @@ export const createOrder = async (req, res, next) => {
 
         res.status(201).json({ success: true, data: order, message: "Order created successfully" });
     } catch (err) {
-        console.error('Order creation error:', err);
+        console.error('Order creation error details:', err.message);
+        console.error(err.stack);
         next(err);
     }
 };
