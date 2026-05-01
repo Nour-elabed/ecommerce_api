@@ -1,4 +1,5 @@
 import Order from "../models/Order.js";
+import Product from "../models/Product.js";
 import { ROLES } from "../constants/roles.js";
 
 // ─── POST /api/orders ─────────────────────────────────────────────
@@ -16,9 +17,20 @@ export const createOrder = async (req, res, next) => {
         // Simulate payment: card/paypal = immediately paid
         const isPaid = paymentMethod !== "Cash on Delivery";
 
+        // Enrich order items with seller info from the database
+        const enrichedOrderItems = await Promise.all(orderItems.map(async (item) => {
+            const product = await Product.findById(item.productId || item.product);
+            if (!product) throw new Error(`Product ${item.name} not found`);
+            return {
+                ...item,
+                product: product._id,
+                seller: product.seller
+            };
+        }));
+
         const order = await Order.create({
             user: req.user._id,
-            orderItems,
+            orderItems: enrichedOrderItems,
             shippingAddress,
             paymentMethod,
             totalPrice,
