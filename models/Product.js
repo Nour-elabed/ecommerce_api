@@ -58,6 +58,11 @@ const productSchema = mongoose.Schema(
             ref: "User",
             required: true,
         },
+        style: {
+            type: String,
+            trim: true,
+        },
+        tags: [String],
     },
     { timestamps: true }
 );

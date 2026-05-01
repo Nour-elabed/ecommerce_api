@@ -45,6 +45,8 @@ export const getAllProducts = async (req, res, next) => {
                 { brand: { $regex: searchTerms, $options: "i" } },
                 { category: { $regex: searchTerms, $options: "i" } },
                 { gender: { $regex: searchTerms, $options: "i" } },
+                { style: { $regex: searchTerms, $options: "i" } },
+                { tags: { $in: [new RegExp(searchTerms, "i")] } },
             ];
         }
 

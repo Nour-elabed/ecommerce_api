@@ -9,6 +9,8 @@ export const adminCreateOrUpdateProductSchema = Joi.object({
     image: Joi.string().allow("").required(),
     category: Joi.string().valid("Luxury", "Sport", "Classic", "Smart", "Minimalist").required(),
     gender: Joi.string().valid("MEN", "WOMEN", "UNISEX").required(),
+    style: Joi.string().allow("").optional(),
+    tags: Joi.array().items(Joi.string()).optional(),
 });
 
 export const adminUpdateOrderStatusSchema = Joi.object({
