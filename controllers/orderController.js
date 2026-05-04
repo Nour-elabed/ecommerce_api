@@ -94,7 +94,7 @@ export const createOrder = async (req, res, next) => {
             });
         }
 
-        const order = await Order.create({
+        const orderDoc = {
             user: req.user._id,
             orderItems: enrichedOrderItems,
             shippingAddress,
@@ -106,12 +106,22 @@ export const createOrder = async (req, res, next) => {
             status: "pending",
             isPaid,
             paidAt: isPaid ? new Date() : undefined,
-        });
+        };
+
+        console.log("[ORDER] Creating order with:", JSON.stringify({
+            user: orderDoc.user,
+            itemCount: enrichedOrderItems.length,
+            paymentMethod: orderDoc.paymentMethod,
+            totalPrice: orderDoc.totalPrice,
+            items: enrichedOrderItems.map(i => ({ product: i.product, seller: i.seller, name: i.name })),
+        }, null, 2));
+
+        const order = await Order.create(orderDoc);
 
         return res.status(201).json({ success: true, data: order, message: "Order created successfully" });
     } catch (err) {
         console.error("Order creation error:", err.message);
-        console.error(err.stack);
+        console.error("Full error:", JSON.stringify(err, Object.getOwnPropertyNames(err), 2));
         // Return explicit 500 with message instead of relying on error handler
         if (!res.headersSent) {
             return res.status(500).json({ 
