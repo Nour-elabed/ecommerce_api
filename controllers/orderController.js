@@ -4,6 +4,22 @@ import Product from "../models/Product.js";
 import User from "../models/User.js";
 import { ROLES } from "../constants/roles.js";
 
+// Helper: check if a string is a valid Mongo ObjectId
+const isValidObjectId = (id) => {
+    if (!id) return false;
+    if (typeof id === "object" && id._bsontype === "ObjectId") return true;
+    return mongoose.Types.ObjectId.isValid(String(id)) && /^[0-9a-fA-F]{24}$/.test(String(id));
+};
+
+// Helper: strip base64 data from image strings (keep only URLs)
+const sanitizeImage = (img) => {
+    if (!img) return "/assets/images/placeholder.svg";
+    if (typeof img === "string" && img.startsWith("data:")) {
+        return "/assets/images/placeholder.svg";
+    }
+    return img;
+};
+
 // ─── POST /api/orders ─────────────────────────────────────────────
 // Creates a new order from the checkout form + cart items.
 export const createOrder = async (req, res, next) => {
@@ -19,59 +35,67 @@ export const createOrder = async (req, res, next) => {
         } = req.body;
 
         if (!orderItems || orderItems.length === 0) {
-            res.status(400);
-            throw new Error("No order items provided");
+            return res.status(400).json({ success: false, message: "No order items provided" });
         }
 
-        // Validate shipping address
         if (!shippingAddress || !shippingAddress.fullName || !shippingAddress.address || 
             !shippingAddress.city || !shippingAddress.postalCode || !shippingAddress.country) {
-            res.status(400);
-            throw new Error("Complete shipping address is required");
+            return res.status(400).json({ success: false, message: "Complete shipping address is required" });
         }
 
         // Simulate payment status
         const isPaid = paymentMethod !== "Cash on Delivery";
 
+        // Find a fallback seller (admin or current user) once, not per-item
+        let fallbackSeller = req.user._id;
+        try {
+            const adminUser = await User.findOne({ role: { $in: [ROLES.ADMIN, ROLES.SUPER_ADMIN] } });
+            if (adminUser) fallbackSeller = adminUser._id;
+        } catch (e) {
+            console.warn("Could not find admin user for fallback seller:", e.message);
+        }
+
         // Enrich order items with seller info
         const enrichedOrderItems = [];
         for (const item of orderItems) {
-            const productId = item.productId || item.product;
+            const rawId = item.productId || item.product;
             
-            if (!productId) {
-                res.status(400);
-                throw new Error(`Invalid product in order: missing product ID`);
+            if (!rawId) {
+                return res.status(400).json({ success: false, message: "Order item missing product ID" });
             }
 
-            let product = null;
-            if (mongoose.Types.ObjectId.isValid(productId)) {
-                product = await Product.findById(productId);
-            }
-            
-            // Fallback for seller: product's seller -> first admin found -> current user
-            let sellerId = product?.seller;
-            if (!sellerId) {
-                const adminUser = await User.findOne({ role: { $in: [ROLES.ADMIN, ROLES.SUPER_ADMIN] } });
-                sellerId = adminUser?._id || req.user._id;
-            }
+            let dbProduct = null;
+            let sellerId = fallbackSeller;
+            let finalProductId;
 
-            // Fallback for product ID if it's a seed string
-            const finalProductId = mongoose.Types.ObjectId.isValid(productId) 
-                ? new mongoose.Types.ObjectId(productId) 
-                : new mongoose.Types.ObjectId(); 
+            // Only look up DB product if it's a valid Mongo ObjectId
+            if (isValidObjectId(rawId)) {
+                try {
+                    dbProduct = await Product.findById(rawId);
+                } catch (e) {
+                    console.warn(`Product lookup failed for ${rawId}:`, e.message);
+                }
+                finalProductId = new mongoose.Types.ObjectId(String(rawId));
+                if (dbProduct?.seller) {
+                    sellerId = dbProduct.seller;
+                }
+            } else {
+                // Seed product — generate a random ObjectId
+                finalProductId = new mongoose.Types.ObjectId();
+            }
 
             enrichedOrderItems.push({
                 product: finalProductId,
-                seller: new mongoose.Types.ObjectId(sellerId),
-                name: item.name || 'Unknown Product',
-                image: item.image || '/assets/images/placeholder.svg',
+                seller: sellerId,
+                name: item.name || "Unknown Product",
+                image: sanitizeImage(item.image),
                 price: Number(item.price) || 0,
                 quantity: Number(item.quantity) || 1,
             });
         }
 
         const order = await Order.create({
-            user: new mongoose.Types.ObjectId(req.user._id),
+            user: req.user._id,
             orderItems: enrichedOrderItems,
             shippingAddress,
             paymentMethod,
@@ -84,10 +108,17 @@ export const createOrder = async (req, res, next) => {
             paidAt: isPaid ? new Date() : undefined,
         });
 
-        res.status(201).json({ success: true, data: order, message: "Order created successfully" });
+        return res.status(201).json({ success: true, data: order, message: "Order created successfully" });
     } catch (err) {
-        console.error('Order creation error details:', err.message);
+        console.error("Order creation error:", err.message);
         console.error(err.stack);
+        // Return explicit 500 with message instead of relying on error handler
+        if (!res.headersSent) {
+            return res.status(500).json({ 
+                success: false, 
+                message: err.message || "Failed to create order" 
+            });
+        }
         next(err);
     }
 };
