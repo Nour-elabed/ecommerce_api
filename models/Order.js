@@ -77,7 +77,7 @@ const orderSchema = mongoose.Schema(
     { timestamps: true }
 );
 
-orderSchema.pre("save", function syncDeliveryFromStatus(next) {
+orderSchema.pre("save", function syncDeliveryFromStatus() {
     if (this.status === "delivered") {
         this.isDelivered = true;
         this.deliveredAt = this.deliveredAt || new Date();
@@ -85,7 +85,6 @@ orderSchema.pre("save", function syncDeliveryFromStatus(next) {
         this.isDelivered = false;
         this.deliveredAt = undefined;
     }
-    next();
 });
 
 const Order = mongoose.model("Order", orderSchema);

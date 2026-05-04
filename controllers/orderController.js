@@ -113,15 +113,28 @@ export const createOrder = async (req, res, next) => {
             itemCount: enrichedOrderItems.length,
             paymentMethod: orderDoc.paymentMethod,
             totalPrice: orderDoc.totalPrice,
-            items: enrichedOrderItems.map(i => ({ product: i.product, seller: i.seller, name: i.name })),
+            items: enrichedOrderItems.map(i => ({ product: String(i.product), seller: String(i.seller), name: i.name })),
         }, null, 2));
 
-        const order = await Order.create(orderDoc);
+        // Split create into new + validate + save for better error diagnostics
+        const order = new Order(orderDoc);
+
+        const validationError = order.validateSync();
+        if (validationError) {
+            console.error("[ORDER] Validation failed:", validationError.message);
+            return res.status(400).json({
+                success: false,
+                message: "Order validation failed: " + validationError.message,
+            });
+        }
+
+        await order.save();
 
         return res.status(201).json({ success: true, data: order, message: "Order created successfully" });
     } catch (err) {
-        console.error("Order creation error:", err.message);
-        console.error("Full error:", JSON.stringify(err, Object.getOwnPropertyNames(err), 2));
+        console.error("[ORDER] Creation error:", err.message);
+        console.error("[ORDER] Error name:", err.name);
+        console.error("[ORDER] Full error:", JSON.stringify(err, Object.getOwnPropertyNames(err), 2));
         // Return explicit 500 with message instead of relying on error handler
         if (!res.headersSent) {
             return res.status(500).json({ 
