@@ -5,7 +5,6 @@ import helmet from "helmet";
 import cors from "cors";
 import rateLimit from "express-rate-limit";
 import morgan from "morgan";
-
 import authRoutes from "./routes/auth.js";
 import cartRoutes from "./routes/cart.js";
 import productRoutes from "./routes/products.js";
