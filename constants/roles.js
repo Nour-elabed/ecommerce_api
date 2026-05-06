@@ -4,4 +4,5 @@ export const ROLES = Object.freeze({
     SUPER_ADMIN: "SUPER_ADMIN",
 });
 
+
 export const DEFAULT_USER_ROLE = ROLES.USER;

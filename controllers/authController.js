@@ -7,6 +7,7 @@ const generateToken = (id) =>
 
 const isElevatedRole = (role) => role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN;
 
+
 const userPayload = (user, includeToken = false) => {
     const payload = {
         id: user._id,
