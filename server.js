@@ -85,6 +85,7 @@ app.use("/api/orders", orderRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/seller", sellerRoutes);
 
+
 // ─── Global Error Handler (must be last!) ─────────────────────────
 app.use(errorHandler);
 
