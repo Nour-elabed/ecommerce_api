@@ -21,6 +21,7 @@ export const connectDB = async () => {
             console.error("Hint: wrong user/password in MONGO_URI.");
         } else if (error.message.includes("IP that isn't whitelisted") || error.message.includes("Could not connect to any servers")) {
             console.error("Hint: your current IP is not in the Atlas Network Access allowlist.");
+            
         }
         process.exit(1);
     }
