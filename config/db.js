@@ -13,6 +13,7 @@ export const connectDB = async () => {
         });
         console.log(`MongoDB connected: ${conn.connection.host}`);
         return conn;
+        
     } catch (error) {
         console.error(`MongoDB connection error [${error.name}]: ${error.message}`);
         if (error.message.includes("ETIMEOUT") || error.message.includes("ENOTFOUND")) {
