@@ -89,23 +89,8 @@ export const getAllProducts = async (req, res, next) => {
                 
                 // Assign a default admin seller if possible
                 const User = mongoose.model("User");
-                let admin = await User.findOne({ role: { $in: ["admin", "super_admin", "ADMIN", "SUPER_ADMIN"] } });
-                
-                if (!admin) {
-                    console.log("No admin user found. Creating a default seed admin...");
-                    // Hash for "ChangeMe123!" using bcryptjs (pre-hashed to avoid dependency overhead)
-                    const defaultHashedPassword = "$2a$10$X877D9uT22r8pL1q4sYm8OFyX7lRvhT.y9zXmG6P44j74fQk3H8lK";
-                    admin = new User({
-                        username: "SystemAdmin",
-                        email: "admin@ecommerce.com",
-                        password: defaultHashedPassword,
-                        role: "SUPER_ADMIN"
-                    });
-                    admin.__skipRoleGuard = true;
-                    await admin.save();
-                    console.log(`Created default seed admin: ${admin.email}`);
-                }
-                const sellerId = admin._id;
+                const admin = await User.findOne({ role: { $in: ["admin", "super_admin"] } });
+                const sellerId = admin?._id;
 
                 const seededProducts = seedData.map(p => ({ ...p, seller: sellerId }));
                 await Product.insertMany(seededProducts);
