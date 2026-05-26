@@ -1,6 +1,5 @@
 # Use official Node.js LTS (Long Term Support) image on Alpine Linux for a tiny footprint
-FROM node:18-alpine
-
+FROM node:22-alpine
 # Set the working directory inside the container to isolate our app code
 WORKDIR /usr/src/app
 
