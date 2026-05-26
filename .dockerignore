@@ -1,0 +1,20 @@
+# Ignore local node_modules because the container will install its own Linux-optimized version
+node_modules
+
+# Ignore package logs
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+
+# Ignore local environment files to prevent leaking production/development secrets into the image
+.env
+.env.local
+.env.development
+.env.production
+
+# Ignore local git directory and documentation
+.git
+.github
+README.md
+Dockerfile
+.dockerignore
