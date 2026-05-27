@@ -168,7 +168,8 @@ export const getOrderById = async (req, res, next) => {
         }
         const isOwner = order.user._id.toString() === req.user._id.toString();
         const userRole = req.user.role || (req.user.isAdmin ? ROLES.ADMIN : ROLES.USER);
-        if (!isOwner && userRole !== ROLES.ADMIN) {
+        const isElevated = userRole === ROLES.ADMIN || userRole === ROLES.SUPER_ADMIN;
+        if (!isOwner && !isElevated) {
             res.status(403);
             throw new Error("Not authorized to view this order");
         }

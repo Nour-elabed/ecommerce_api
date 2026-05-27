@@ -2,7 +2,9 @@ import User from "../models/User.js";
 import Product from "../models/Product.js";
 import Order from "../models/Order.js";
 
-const STATUS_KEYS = ["pending", "processing", "shipped", "delivered", "cancelled"];
+// Keys must match the Order schema enum: pending | shipped | delivered | canceled
+// "processing" was removed (never in DB); "cancelled" unified to "canceled" (US spelling in schema).
+const STATUS_KEYS = ["pending", "shipped", "delivered", "canceled"];
 
 const buildStatusCounts = (rawCounts) => {
     const base = STATUS_KEYS.reduce((acc, key) => {
@@ -12,8 +14,8 @@ const buildStatusCounts = (rawCounts) => {
 
     rawCounts.forEach(({ _id, count }) => {
         if (!_id) return;
-        // Tolerate American spelling stored historically.
-        const normalized = _id === "canceled" ? "cancelled" : _id;
+        // Normalise the legacy "cancelled" (British) to "canceled" (schema value).
+        const normalized = _id === "cancelled" ? "canceled" : _id;
         if (Object.prototype.hasOwnProperty.call(base, normalized)) {
             base[normalized] += count;
         }
