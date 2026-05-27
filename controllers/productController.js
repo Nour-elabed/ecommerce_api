@@ -1,4 +1,3 @@
-import mongoose from "mongoose";
 import Product from "../models/Product.js";
 import User from "../models/User.js";
 import { ROLES } from "../constants/roles.js";
