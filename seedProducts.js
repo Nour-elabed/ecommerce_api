@@ -3,6 +3,8 @@ dotenv.config();
 
 import { connectDB } from "./config/db.js";
 import Product from "./models/Product.js";
+import User from "./models/User.js";
+import { ROLES } from "./constants/roles.js";
 
 const products = [
     // Generated below
@@ -61,11 +63,19 @@ for (let i = 0; i < 20; i++) products.push(makeProduct({ gender: "UNISEX", i: i 
 const seedProducts = async () => {
     try {
         await connectDB();
-        
+
+        const admin = await User.findOne({ role: { $in: [ROLES.SUPER_ADMIN, ROLES.ADMIN] } });
+        if (!admin) {
+            console.error("❌ No admin user found. Run the setup page first to create a SUPER_ADMIN.");
+            process.exit(1);
+        }
+
+        const productsWithSeller = products.map(p => ({ ...p, seller: admin._id }));
+
         await Product.deleteMany({});
-        await Product.insertMany(products);
-        
-        console.log(`✅ Successfully seeded ${products.length} products`);
+        await Product.insertMany(productsWithSeller);
+
+        console.log(`✅ Successfully seeded ${productsWithSeller.length} products (seller: ${admin.email})`);
         process.exit(0);
     } catch (error) {
         console.error('❌ Error seeding products:', error);
