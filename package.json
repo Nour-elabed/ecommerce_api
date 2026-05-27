@@ -4,7 +4,8 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "start": "nodemon server.js",
+    "start": "node server.js",
+    "dev": "nodemon server.js",
     "backfill:roles": "node scripts/backfillUserRoles.js",
     "seed:products": "node seedProducts.js",
     "seed:super": "node seedSuperAdmin.js",
