@@ -15,6 +15,7 @@ const userPayload = (user, includeToken = false) => {
         email: user.email,
         role: user.role,
         isAdmin: isElevatedRole(user.role),
+        balance: user.balance || 0,
         createdAt: user.createdAt,
     };
     if (includeToken) payload.token = generateToken(user._id);

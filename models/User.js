@@ -12,6 +12,7 @@ const userSchema = mongoose.Schema(
             enum: Object.values(ROLES),
             default: DEFAULT_USER_ROLE,
         },
+        balance: { type: Number, default: 0, min: 0 },
     },
     {
         timestamps: true,

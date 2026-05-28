@@ -55,11 +55,12 @@ export const createOrder = async (req, res, next) => {
             console.warn("Could not find admin user for fallback seller:", e.message);
         }
 
-        // Enrich order items with seller info
+        // Enrich order items with seller info + validate stock
         const enrichedOrderItems = [];
+        const stockUpdates = []; // [{ product, qty }] applied after validation passes
         for (const item of orderItems) {
             const rawId = item.productId || item.product;
-            
+
             if (!rawId) {
                 return res.status(400).json({ success: false, message: "Order item missing product ID" });
             }
@@ -67,6 +68,7 @@ export const createOrder = async (req, res, next) => {
             let dbProduct = null;
             let sellerId = fallbackSeller;
             let finalProductId;
+            const requestedQty = Number(item.quantity) || 1;
 
             // Only look up DB product if it's a valid Mongo ObjectId
             if (isValidObjectId(rawId)) {
@@ -79,8 +81,25 @@ export const createOrder = async (req, res, next) => {
                 if (dbProduct?.seller) {
                     sellerId = dbProduct.seller;
                 }
+
+                // Stock check — block order if requested qty > available stock
+                if (dbProduct) {
+                    if (dbProduct.stock <= 0) {
+                        return res.status(400).json({
+                            success: false,
+                            message: `"${dbProduct.name}" is out of stock.`,
+                        });
+                    }
+                    if (requestedQty > dbProduct.stock) {
+                        return res.status(400).json({
+                            success: false,
+                            message: `Only ${dbProduct.stock} unit(s) of "${dbProduct.name}" available — you requested ${requestedQty}.`,
+                        });
+                    }
+                    stockUpdates.push({ product: dbProduct, qty: requestedQty });
+                }
             } else {
-                // Seed product — generate a random ObjectId
+                // Seed product — generate a random ObjectId, no stock tracking
                 finalProductId = new mongoose.Types.ObjectId();
             }
 
@@ -90,7 +109,7 @@ export const createOrder = async (req, res, next) => {
                 name: item.name || "Unknown Product",
                 image: sanitizeImage(item.image),
                 price: Number(item.price) || 0,
-                quantity: Number(item.quantity) || 1,
+                quantity: requestedQty,
             });
         }
 
@@ -129,6 +148,28 @@ export const createOrder = async (req, res, next) => {
         }
 
         await order.save();
+
+        // Decrement stock for each ordered item
+        for (const { product, qty } of stockUpdates) {
+            product.stock = Math.max(0, product.stock - qty);
+            await product.save();
+        }
+
+        // Credit each seller's balance for items they sold (excluding self-purchases)
+        const sellerCredits = new Map(); // sellerId -> total amount
+        for (const item of enrichedOrderItems) {
+            const sellerStr = String(item.seller);
+            if (sellerStr === String(req.user._id)) continue; // don't credit buyer == seller
+            const lineTotal = item.price * item.quantity;
+            sellerCredits.set(sellerStr, (sellerCredits.get(sellerStr) || 0) + lineTotal);
+        }
+        for (const [sellerId, amount] of sellerCredits.entries()) {
+            try {
+                await User.findByIdAndUpdate(sellerId, { $inc: { balance: amount } });
+            } catch (e) {
+                console.warn(`Failed to credit seller ${sellerId}:`, e.message);
+            }
+        }
 
         return res.status(201).json({ success: true, data: order, message: "Order created successfully" });
     } catch (err) {
