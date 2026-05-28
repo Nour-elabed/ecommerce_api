@@ -5,13 +5,16 @@ export const connectDB = async () => {
         console.error("MONGO_URI is not set in environment variables.");
         process.exit(1);
     }
+    const isAtlas = process.env.MONGO_URI.startsWith("mongodb+srv://");
+    const safeUri = process.env.MONGO_URI.replace(/\/\/[^@]+@/, "//<credentials>@");
+    console.log(`Connecting to MongoDB (${isAtlas ? "ATLAS" : "LOCAL/OTHER"}): ${safeUri}`);
     try {
         const conn = await mongoose.connect(process.env.MONGO_URI, {
             serverSelectionTimeoutMS: 15000,
             connectTimeoutMS: 15000,
             socketTimeoutMS: 15000,
         });
-        console.log(`MongoDB connected: ${conn.connection.host}`);
+        console.log(`MongoDB connected: host=${conn.connection.host} db=${conn.connection.name}`);
         return conn;
         
     } catch (error) {
