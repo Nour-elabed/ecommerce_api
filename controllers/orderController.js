@@ -155,22 +155,6 @@ export const createOrder = async (req, res, next) => {
             await product.save();
         }
 
-        // Credit each seller's balance for items they sold (excluding self-purchases)
-        const sellerCredits = new Map(); // sellerId -> total amount
-        for (const item of enrichedOrderItems) {
-            const sellerStr = String(item.seller);
-            if (sellerStr === String(req.user._id)) continue; // don't credit buyer == seller
-            const lineTotal = item.price * item.quantity;
-            sellerCredits.set(sellerStr, (sellerCredits.get(sellerStr) || 0) + lineTotal);
-        }
-        for (const [sellerId, amount] of sellerCredits.entries()) {
-            try {
-                await User.findByIdAndUpdate(sellerId, { $inc: { balance: amount } });
-            } catch (e) {
-                console.warn(`Failed to credit seller ${sellerId}:`, e.message);
-            }
-        }
-
         return res.status(201).json({ success: true, data: order, message: "Order created successfully" });
     } catch (err) {
         console.error("[ORDER] Creation error:", err.message);
